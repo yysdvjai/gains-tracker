@@ -1,4 +1,6 @@
 // app.js
+
+// --- 1. WORKOUT TEMPLATES ---
 const workoutTemplates = {
   A: {
     title: "Workout A: Push & Drive",
@@ -35,4 +37,74 @@ const workoutTemplates = {
   }
 };
 
-console.log("Workout templates loaded and ready for gains.");
+// --- 2. DOM ELEMENTS ---
+const workoutSelect = document.getElementById('workout-plan');
+const workoutDisplay = document.getElementById('workout-display');
+const saveBtn = document.getElementById('save-btn');
+
+// --- 3. EVENT LISTENERS ---
+// Listen for when you pick a workout from the dropdown
+workoutSelect.addEventListener('change', (e) => {
+  const selectedWorkout = e.target.value;
+  renderWorkout(selectedWorkout);
+});
+
+// Listen for the save button click (Placeholder for now)
+saveBtn.addEventListener('click', () => {
+    alert("Boom! Workout finished. (In the next step, we will connect this to a database to save your numbers).");
+});
+
+// --- 4. CORE FUNCTIONS ---
+function renderWorkout(workoutKey) {
+  // Clear the display area first
+  workoutDisplay.innerHTML = '';
+
+  // If you select the default "-- Select Workout --", hide the save button and stop
+  if (!workoutKey) {
+    saveBtn.style.display = 'none';
+    return;
+  }
+
+  // Get the correct workout data
+  const workout = workoutTemplates[workoutKey];
+  
+  // Loop through each exercise and build the HTML cards
+  workout.exercises.forEach((exercise, index) => {
+    
+    // Create the main card container
+    const card = document.createElement('div');
+    card.classList.add('exercise-card');
+    
+    // Create the header (Exercise name and notes)
+    const header = document.createElement('div');
+    header.classList.add('exercise-header');
+    header.innerHTML = `
+        <h3>${index + 1}. ${exercise.name}</h3>
+        ${exercise.notes ? `<span class="exercise-notes">${exercise.notes}</span>` : ''}
+    `;
+    card.appendChild(header);
+
+    // Generate the rows for the sets
+    for (let i = 1; i <= exercise.sets; i++) {
+      const setRow = document.createElement('div');
+      setRow.classList.add('set-row');
+      
+      // Notice how we use the template's 'reps' as the default value in the input box, 
+      // allowing you to overwrite it if you under/overperform.
+      setRow.innerHTML = `
+          <label>Set ${i}</label>
+          <div class="set-inputs">
+              <input type="number" placeholder="Weight" class="weight-input">
+              <input type="text" value="${exercise.reps}" class="reps-input">
+          </div>
+      `;
+      card.appendChild(setRow);
+    }
+    
+    // Add the finished card to the screen
+    workoutDisplay.appendChild(card);
+  });
+
+  // Show the save button now that the workout is loaded
+  saveBtn.style.display = 'block';
+}
