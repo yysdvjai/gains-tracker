@@ -42,22 +42,37 @@ const workoutSelect = document.getElementById('workout-plan');
 const workoutDisplay = document.getElementById('workout-display');
 const saveBtn = document.getElementById('save-btn');
 
-// --- 3. HELPER FUNCTION: GET PAST DATA ---
-// Searches local storage for the most recent log of a specific exercise & set
-function getLastPerformance(exerciseName, setIndex) {
+// --- 3. HELPER FUNCTION: GET STATS (LAST & MAX) ---
+// Scans history to find the most recent weight and the highest weight ever lifted
+function getPerformanceStats(exerciseName, setIndex) {
     const history = JSON.parse(localStorage.getItem('gainsHistory')) || [];
     
-    // Loop backwards to find the most recent entry
+    let lastPerf = null;
+    let maxWeight = 0;
+
+    // Loop backward through history to find the newest entry first
     for (let i = history.length - 1; i >= 0; i--) {
         const entry = history[i];
+        
         if (entry.exercises && entry.exercises[exerciseName] && entry.exercises[exerciseName][setIndex]) {
-            const weight = entry.exercises[exerciseName][setIndex].weight;
-            if (weight) { // Only return if they actually logged a weight
-                return { weight: weight, date: entry.date };
+            const weightVal = parseFloat(entry.exercises[exerciseName][setIndex].weight);
+            
+            // Make sure it's a valid number
+            if (!isNaN(weightVal)) {
+                // If we haven't found the "Last time" yet, this first one we hit is it
+                if (!lastPerf) {
+                    lastPerf = { weight: weightVal, date: entry.date };
+                }
+                
+                // Compare every valid weight to find the absolute maximum
+                if (weightVal > maxWeight) {
+                    maxWeight = weightVal;
+                }
             }
         }
     }
-    return null;
+    
+    return { last: lastPerf, max: maxWeight };
 }
 
 // --- 4. CORE FUNCTIONS ---
@@ -87,18 +102,22 @@ function renderWorkout(workoutKey) {
       const setRow = document.createElement('div');
       setRow.classList.add('set-row');
       
-      // Look up past data for this specific set
-      const lastPerf = getLastPerformance(exercise.name, i);
-      let lastPerfHTML = '';
-      if (lastPerf) {
-          // If data exists, create the mini text underneath the label
-          lastPerfHTML = `<div class="last-perf">Prev: ${lastPerf.weight} lbs (${lastPerf.date})</div>`;
+      // Get our Last Time and Max stats
+      const stats = getPerformanceStats(exercise.name, i);
+      let statsHTML = '<div class="stats-row">';
+      
+      if (stats.last) {
+          statsHTML += `<span class="stat-badge">Last time: ${stats.last.weight} lbs</span>`;
       }
+      if (stats.max > 0) {
+          statsHTML += `<span class="stat-badge max-badge">Max: ${stats.max} lbs</span>`;
+      }
+      statsHTML += '</div>';
 
       setRow.innerHTML = `
           <div class="set-label-container">
               <label>Set ${i + 1}</label>
-              ${lastPerfHTML}
+              ${statsHTML}
           </div>
           <div class="set-inputs">
               <input type="number" placeholder="Lbs" class="weight-input" data-exercise="${exercise.name}" data-set="${i}">
@@ -124,7 +143,6 @@ saveBtn.addEventListener('click', () => {
     const currentWorkoutKey = workoutSelect.value;
     if (!currentWorkoutKey) return;
 
-    // Create a new record with today's date
     const dateStr = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const workoutRecord = {
         id: Date.now(),
@@ -133,11 +151,9 @@ saveBtn.addEventListener('click', () => {
         exercises: {}
     };
 
-    // Grab all input fields on the screen
     const weightInputs = document.querySelectorAll('.weight-input');
     const repsInputs = document.querySelectorAll('.reps-input');
 
-    // Loop through inputs and pack them into our record object
     weightInputs.forEach((wInput, index) => {
         const exName = wInput.getAttribute('data-exercise');
         const setIdx = wInput.getAttribute('data-set');
@@ -153,12 +169,23 @@ saveBtn.addEventListener('click', () => {
         };
     });
 
-    // Save it to the browser's local storage
     const history = JSON.parse(localStorage.getItem('gainsHistory')) || [];
     history.push(workoutRecord);
     localStorage.setItem('gainsHistory', JSON.stringify(history));
 
-    // Give feedback and refresh the UI to show the new "Prev" weights!
-    alert("Workout Saved! Great push today.");
+    // Reload the screen to instantly show the updated Max and Last Time stats!
     renderWorkout(currentWorkoutKey);
+    
+    // Smooth scrolling to top to show success
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Temporarily change button text for visual feedback
+    const originalText = saveBtn.innerText;
+    saveBtn.innerText = "✓ Saved Successfully";
+    saveBtn.style.background = "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)";
+    
+    setTimeout(() => {
+        saveBtn.innerText = originalText;
+        saveBtn.style.background = "linear-gradient(135deg, #ff5722 0%, #e64a19 100%)";
+    }, 2000);
 });
