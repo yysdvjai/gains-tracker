@@ -42,40 +42,39 @@ const workoutSelect = document.getElementById('workout-plan');
 const workoutDisplay = document.getElementById('workout-display');
 const saveBtn = document.getElementById('save-btn');
 
-// --- 3. EVENT LISTENERS ---
-// Listen for when you pick a workout from the dropdown
-workoutSelect.addEventListener('change', (e) => {
-  const selectedWorkout = e.target.value;
-  renderWorkout(selectedWorkout);
-});
-
-// Listen for the save button click (Placeholder for now)
-saveBtn.addEventListener('click', () => {
-    alert("Boom! Workout finished. (In the next step, we will connect this to a database to save your numbers).");
-});
+// --- 3. HELPER FUNCTION: GET PAST DATA ---
+// Searches local storage for the most recent log of a specific exercise & set
+function getLastPerformance(exerciseName, setIndex) {
+    const history = JSON.parse(localStorage.getItem('gainsHistory')) || [];
+    
+    // Loop backwards to find the most recent entry
+    for (let i = history.length - 1; i >= 0; i--) {
+        const entry = history[i];
+        if (entry.exercises && entry.exercises[exerciseName] && entry.exercises[exerciseName][setIndex]) {
+            const weight = entry.exercises[exerciseName][setIndex].weight;
+            if (weight) { // Only return if they actually logged a weight
+                return { weight: weight, date: entry.date };
+            }
+        }
+    }
+    return null;
+}
 
 // --- 4. CORE FUNCTIONS ---
 function renderWorkout(workoutKey) {
-  // Clear the display area first
   workoutDisplay.innerHTML = '';
 
-  // If you select the default "-- Select Workout --", hide the save button and stop
   if (!workoutKey) {
     saveBtn.style.display = 'none';
     return;
   }
 
-  // Get the correct workout data
   const workout = workoutTemplates[workoutKey];
   
-  // Loop through each exercise and build the HTML cards
   workout.exercises.forEach((exercise, index) => {
-    
-    // Create the main card container
     const card = document.createElement('div');
     card.classList.add('exercise-card');
     
-    // Create the header (Exercise name and notes)
     const header = document.createElement('div');
     header.classList.add('exercise-header');
     header.innerHTML = `
@@ -84,27 +83,82 @@ function renderWorkout(workoutKey) {
     `;
     card.appendChild(header);
 
-    // Generate the rows for the sets
-    for (let i = 1; i <= exercise.sets; i++) {
+    for (let i = 0; i < exercise.sets; i++) {
       const setRow = document.createElement('div');
       setRow.classList.add('set-row');
       
-      // Notice how we use the template's 'reps' as the default value in the input box, 
-      // allowing you to overwrite it if you under/overperform.
+      // Look up past data for this specific set
+      const lastPerf = getLastPerformance(exercise.name, i);
+      let lastPerfHTML = '';
+      if (lastPerf) {
+          // If data exists, create the mini text underneath the label
+          lastPerfHTML = `<div class="last-perf">Prev: ${lastPerf.weight} lbs (${lastPerf.date})</div>`;
+      }
+
       setRow.innerHTML = `
-          <label>Set ${i}</label>
+          <div class="set-label-container">
+              <label>Set ${i + 1}</label>
+              ${lastPerfHTML}
+          </div>
           <div class="set-inputs">
-              <input type="number" placeholder="Weight" class="weight-input">
-              <input type="text" value="${exercise.reps}" class="reps-input">
+              <input type="number" placeholder="Lbs" class="weight-input" data-exercise="${exercise.name}" data-set="${i}">
+              <input type="text" value="${exercise.reps}" class="reps-input" data-exercise="${exercise.name}" data-set="${i}">
           </div>
       `;
       card.appendChild(setRow);
     }
     
-    // Add the finished card to the screen
     workoutDisplay.appendChild(card);
   });
 
-  // Show the save button now that the workout is loaded
   saveBtn.style.display = 'block';
 }
+
+// --- 5. EVENT LISTENERS ---
+workoutSelect.addEventListener('change', (e) => {
+  renderWorkout(e.target.value);
+});
+
+// The Save Logic
+saveBtn.addEventListener('click', () => {
+    const currentWorkoutKey = workoutSelect.value;
+    if (!currentWorkoutKey) return;
+
+    // Create a new record with today's date
+    const dateStr = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const workoutRecord = {
+        id: Date.now(),
+        date: dateStr,
+        workoutKey: currentWorkoutKey,
+        exercises: {}
+    };
+
+    // Grab all input fields on the screen
+    const weightInputs = document.querySelectorAll('.weight-input');
+    const repsInputs = document.querySelectorAll('.reps-input');
+
+    // Loop through inputs and pack them into our record object
+    weightInputs.forEach((wInput, index) => {
+        const exName = wInput.getAttribute('data-exercise');
+        const setIdx = wInput.getAttribute('data-set');
+        const rInput = repsInputs[index];
+
+        if (!workoutRecord.exercises[exName]) {
+            workoutRecord.exercises[exName] = [];
+        }
+
+        workoutRecord.exercises[exName][setIdx] = {
+            weight: wInput.value,
+            reps: rInput.value
+        };
+    });
+
+    // Save it to the browser's local storage
+    const history = JSON.parse(localStorage.getItem('gainsHistory')) || [];
+    history.push(workoutRecord);
+    localStorage.setItem('gainsHistory', JSON.stringify(history));
+
+    // Give feedback and refresh the UI to show the new "Prev" weights!
+    alert("Workout Saved! Great push today.");
+    renderWorkout(currentWorkoutKey);
+});
