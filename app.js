@@ -43,12 +43,12 @@ const workoutDisplay = document.getElementById('workout-display');
 const saveBtn = document.getElementById('save-btn');
 
 // --- 3. HELPER FUNCTION: GET STATS (LAST & MAX) ---
-// Scans history to find the most recent weight and the highest weight ever lifted
+// Scans history to find the most recent weight and the highest weight ever lifted (with dates!)
 function getPerformanceStats(exerciseName, setIndex) {
     const history = JSON.parse(localStorage.getItem('gainsHistory')) || [];
     
     let lastPerf = null;
-    let maxWeight = 0;
+    let maxPerf = { weight: 0, date: null }; // Upgraded to store an object with the date
 
     // Loop backward through history to find the newest entry first
     for (let i = history.length - 1; i >= 0; i--) {
@@ -64,15 +64,15 @@ function getPerformanceStats(exerciseName, setIndex) {
                     lastPerf = { weight: weightVal, date: entry.date };
                 }
                 
-                // Compare every valid weight to find the absolute maximum
-                if (weightVal > maxWeight) {
-                    maxWeight = weightVal;
+                // Compare every valid weight to find the absolute maximum AND save the date
+                if (weightVal > maxPerf.weight) {
+                    maxPerf = { weight: weightVal, date: entry.date };
                 }
             }
         }
     }
     
-    return { last: lastPerf, max: maxWeight };
+    return { last: lastPerf, max: maxPerf };
 }
 
 // --- 4. CORE FUNCTIONS ---
@@ -106,11 +106,12 @@ function renderWorkout(workoutKey) {
       const stats = getPerformanceStats(exercise.name, i);
       let statsHTML = '<div class="stats-row">';
       
+      // Upgraded to show kg and the date for both!
       if (stats.last) {
-          statsHTML += `<span class="stat-badge">Last time: ${stats.last.weight} lbs</span>`;
+          statsHTML += `<span class="stat-badge">Last time: ${stats.last.weight} kg (${stats.last.date})</span>`;
       }
-      if (stats.max > 0) {
-          statsHTML += `<span class="stat-badge max-badge">Max: ${stats.max} lbs</span>`;
+      if (stats.max && stats.max.weight > 0) {
+          statsHTML += `<span class="stat-badge max-badge">Max: ${stats.max.weight} kg (${stats.max.date})</span>`;
       }
       statsHTML += '</div>';
 
@@ -120,7 +121,7 @@ function renderWorkout(workoutKey) {
               ${statsHTML}
           </div>
           <div class="set-inputs">
-              <input type="number" placeholder="Lbs" class="weight-input" data-exercise="${exercise.name}" data-set="${i}">
+              <input type="number" placeholder="kg" class="weight-input" data-exercise="${exercise.name}" data-set="${i}">
               <input type="text" value="${exercise.reps}" class="reps-input" data-exercise="${exercise.name}" data-set="${i}">
           </div>
       `;
@@ -173,13 +174,10 @@ saveBtn.addEventListener('click', () => {
     history.push(workoutRecord);
     localStorage.setItem('gainsHistory', JSON.stringify(history));
 
-    // Reload the screen to instantly show the updated Max and Last Time stats!
     renderWorkout(currentWorkoutKey);
     
-    // Smooth scrolling to top to show success
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Temporarily change button text for visual feedback
     const originalText = saveBtn.innerText;
     saveBtn.innerText = "✓ Saved Successfully";
     saveBtn.style.background = "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)";
