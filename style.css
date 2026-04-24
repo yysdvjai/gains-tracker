@@ -187,3 +187,42 @@ select:focus {
 #save-btn:active {
     transform: scale(0.98);
 }
+
+/* 10. Performance Chart Styling */
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.exercise-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.performance-btn {
+    background: transparent;
+    color: #ff5722;
+    border: 1px solid #ff5722;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.performance-btn:hover {
+    background: #ff5722;
+    color: #fff;
+}
+
+.chart-container {
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #222;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
