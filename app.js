@@ -34,6 +34,39 @@ const workoutTemplates = {
       { name: "Pec Flys (Machine/Cable)", sets: 3, reps: "12–15", notes: "Drop Set" },
       { name: "Pallof Press", sets: 3, reps: "12 per side", notes: "Core stability" }
     ]
+  },
+  D: {
+    title: "Workout D: Chest, Mid-Back & Quad Focus",
+    exercises: [
+      { name: "Goblet Squat OR Trap Bar Deadlift", sets: 3, reps: "8-10" },
+      { name: "Incline DB Bench Press (30°)", sets: 3, reps: "8-10" },
+      { name: "Chest-Supported DB / T-Bar Row", sets: 3, reps: "10-12" },
+      { name: "Cable Face Pulls", sets: 3, reps: "12-15" },
+      { name: "Cable Overhead Tricep Extension", sets: 3, reps: "12-15" },
+      { name: "Incline DB Bicep Curls", sets: 3, reps: "10-12" }
+    ]
+  },
+  E: {
+    title: "Workout E: Lats, Delts, Hamstrings & Chest Volume",
+    exercises: [
+      { name: "Romanian Deadlift (RDL) or Single-Leg DB RDL", sets: 3, reps: "8-10" },
+      { name: "Lat Pulldown (Neutral or V-Grip)", sets: 3, reps: "8-10" },
+      { name: "Seated DB Shoulder Press", sets: 3, reps: "10-12" },
+      { name: "Dips (Leaning Forward) OR Cable Pec Flys", sets: 3, reps: "10-12" },
+      { name: "Cable Lateral Raises", sets: 3, reps: "12-15" },
+      { name: "Pallof Press or Cable Ab Crunch", sets: 3, reps: "12-15" }
+    ]
+  },
+  F: {
+    title: "Workout F: Unilateral Legs, Back Width & Arm Density",
+    exercises: [
+      { name: "Bulgarian Split Squats", sets: 3, reps: "8-10 per leg" },
+      { name: "Incline Smith Machine Press OR Flat DB Press", sets: 3, reps: "8-10" },
+      { name: "Seated Cable Row (Wide Grip)", sets: 3, reps: "10-12" },
+      { name: "Weighted Pull-Ups OR Chin-Ups", sets: 3, reps: "6-8" },
+      { name: "Hammer Curls (Rope or DB)", sets: 3, reps: "10-12" },
+      { name: "Tricep Rope Pushdowns", sets: 3, reps: "12-15" }
+    ]
   }
 };
 
