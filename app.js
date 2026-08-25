@@ -184,6 +184,29 @@ function drawChart(exerciseName, index) {
     });
 }
 
+// --- NEW: AUTOSAVE HELPER FUNCTION ---
+function saveCurrentFormState() {
+    const currentWorkoutKey = workoutSelect.value;
+    if (!currentWorkoutKey) return;
+
+    const formData = {
+        workoutKey: currentWorkoutKey,
+        inputs: []
+    };
+
+    const weightInputs = document.querySelectorAll('.weight-input');
+    const repsInputs = document.querySelectorAll('.reps-input');
+
+    weightInputs.forEach((wInput, index) => {
+        formData.inputs.push({
+            weight: wInput.value,
+            reps: repsInputs[index].value
+        });
+    });
+
+    localStorage.setItem('active_workout_backup', JSON.stringify(formData));
+}
+
 // --- 4. CORE ENGINE ---
 function renderWorkout(workoutKey) {
   workoutDisplay.innerHTML = '';
@@ -198,7 +221,7 @@ function renderWorkout(workoutKey) {
     const card = document.createElement('div');
     card.classList.add('exercise-card');
     
-    // NEW: We updated the header to include the Chart button
+    // Header including Chart button
     const header = document.createElement('div');
     header.classList.add('exercise-header');
     header.innerHTML = `
@@ -206,11 +229,11 @@ function renderWorkout(workoutKey) {
             <h3>${index + 1}. ${exercise.name}</h3>
             ${exercise.notes ? `<span class="exercise-notes">${exercise.notes}</span>` : ''}
         </div>
-        <button class="performance-btn">📈 Chart</button>
+        <button class="performance-btn" type="button">📈 Chart</button>
     `;
     card.appendChild(header);
 
-    // NEW: Hidden chart container
+    // Hidden chart container
     const chartDiv = document.createElement('div');
     chartDiv.classList.add('chart-container');
     chartDiv.id = `chart-container-${index}`;
@@ -257,10 +280,30 @@ function renderWorkout(workoutKey) {
   });
 
   saveBtn.style.display = 'block';
+
+  // --- NEW: RESTORE SAVED STATE IF IT MATCHES CURRENT WORKOUT ---
+  const savedBackup = JSON.parse(localStorage.getItem('active_workout_backup'));
+  if (savedBackup && savedBackup.workoutKey === workoutKey) {
+      const weightInputs = document.querySelectorAll('.weight-input');
+      const repsInputs = document.querySelectorAll('.reps-input');
+
+      savedBackup.inputs.forEach((item, index) => {
+          if (weightInputs[index]) weightInputs[index].value = item.weight;
+          if (repsInputs[index]) repsInputs[index].value = item.reps;
+      });
+  }
+
+  // --- NEW: ATTACH INPUT LISTENERS TO AUTO-SAVE ON TYPING ---
+  const allInputs = document.querySelectorAll('.weight-input, .reps-input');
+  allInputs.forEach(input => {
+      input.addEventListener('input', saveCurrentFormState);
+  });
 }
 
 // --- 5. EVENT LISTENERS ---
 workoutSelect.addEventListener('change', (e) => {
+  // Clear backup when explicitly switching to a different workout template dropdown
+  localStorage.removeItem('active_workout_backup');
   renderWorkout(e.target.value);
 });
 
@@ -298,6 +341,9 @@ saveBtn.addEventListener('click', () => {
     history.push(workoutRecord);
     localStorage.setItem('gainsHistory', JSON.stringify(history));
 
+    // --- NEW: CLEAR TEMPORARY BACKUP ON SUCCESSFUL SAVE ---
+    localStorage.removeItem('active_workout_backup');
+
     renderWorkout(currentWorkoutKey);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
@@ -308,4 +354,13 @@ saveBtn.addEventListener('click', () => {
         saveBtn.innerText = originalText;
         saveBtn.style.background = "linear-gradient(135deg, #ff5722 0%, #e64a19 100%)";
     }, 2000);
+});
+
+// --- NEW: AUTO-LOAD PREVIOUSLY SELECTED WORKOUT ON PAGE REFRESH ---
+window.addEventListener('DOMContentLoaded', () => {
+    const savedBackup = JSON.parse(localStorage.getItem('active_workout_backup'));
+    if (savedBackup && savedBackup.workoutKey) {
+        workoutSelect.value = savedBackup.workoutKey;
+        renderWorkout(savedBackup.workoutKey);
+    }
 });
